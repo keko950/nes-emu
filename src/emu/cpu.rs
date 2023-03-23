@@ -74,6 +74,8 @@ impl CPU {
 
         if sum > 0xff {
             self.sec_set_carry_flag();
+        } else {
+            self.clc_clear_carry_flag();
         }
 
         let result = sum as u8;
@@ -82,6 +84,10 @@ impl CPU {
             self.set_overflow_flag();
         } else {
             self.remove_overflow_flag();
+        }
+
+        if result > 127 {
+            self.set_negative_flag();
         }
 
         self.accumulator = result;
@@ -102,7 +108,7 @@ impl CPU {
     pub fn asl_arithmetic_shift_left(&mut self, value: u8) -> u8 {
         let result = value << 1;
 
-        if value & 0b1000_0000 == 1 {
+        if value & 0b1000_0000 != 0 {
             self.sec_set_carry_flag();
         } else {
             self.clc_clear_carry_flag();
@@ -114,7 +120,7 @@ impl CPU {
     pub fn asl_arithmetic_shift_left_accu(&mut self) {
         let result = self.accumulator << 1;
 
-        if self.accumulator & 0b1000_0000 == 1 {
+        if self.accumulator & 0b1000_0000 != 0 {
             self.sec_set_carry_flag();
         } else {
             self.clc_clear_carry_flag();
@@ -126,7 +132,7 @@ impl CPU {
             self.remove_zero_flag();
         }
 
-        if result & 0b1000_0000 == 1 {
+        if result & 0b1000_0000 != 0 {
             self.set_negative_flag();
         } else {
             self.remove_negative_flag();
@@ -164,4 +170,50 @@ impl CPU {
             self.status = self.status & 0b0111_1111;
         }
     }
+}
+
+
+#[test]
+fn test_adc() {
+    let mut cpu = CPU::new();
+    cpu.adc_add_with_carry(0x05);
+
+    assert_eq!(cpu.accumulator, 0x05);
+
+    cpu.adc_add_with_carry(0xFF);
+    assert_eq!(cpu.accumulator, 0x04);
+    assert_eq!(cpu.status & 0b0000_0001, 1);
+}
+#[test]
+fn test_and() {
+    let mut cpu = CPU::new();
+    cpu.and_logical_and(0x05);
+
+    assert_eq!(cpu.accumulator, 0x00);
+
+    cpu.adc_add_with_carry(0x05);
+    cpu.and_logical_and(0x01);
+
+    assert_eq!(cpu.accumulator, 0x01);
+}
+
+#[test]
+fn test_asl() {
+    let mut cpu = CPU::new();
+    let result = cpu.asl_arithmetic_shift_left(0x81);
+
+    assert_eq!(result, 0x02);
+
+    assert_eq!(cpu.status & 0b0000_0001, 1);
+}
+
+#[test]
+fn test_asl_accu() {
+    let mut cpu = CPU::new();
+    cpu.adc_add_with_carry(0x81);
+    cpu.asl_arithmetic_shift_left_accu();
+
+    assert_eq!(cpu.accumulator, 0x02);
+
+    assert_eq!(cpu.status & 0b0000_0001, 1);
 }
