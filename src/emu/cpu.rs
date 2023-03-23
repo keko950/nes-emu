@@ -152,7 +152,6 @@ impl CPU {
                         .wrapping_add(1)
                         .wrapping_add(addr as u16);
         self.program_counter = jump_addr;
-
     }
 
     pub fn lda_load_accumulator(&mut self, value: u8) {
@@ -216,4 +215,13 @@ fn test_asl_accu() {
     assert_eq!(cpu.accumulator, 0x02);
 
     assert_eq!(cpu.status & 0b0000_0001, 1);
+}
+
+#[test]
+fn bcc_branch_if_carry_clear() {
+    let mut cpu = CPU::new();
+    cpu.bcc_branch_if_carry_clear();
+    
+    // Since memory is un-initialized the jump would be 1
+    assert_eq!(cpu.program_counter, 1);
 }
