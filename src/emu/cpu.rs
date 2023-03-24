@@ -41,6 +41,10 @@ impl CPU {
         self.status = self.status | 0b0100_0000;
     }    
 
+    fn remove_interrupt_flag(&mut self) {
+        self.status = self.status & 0b1111_1011;
+    }
+
     fn remove_overflow_flag(&mut self) {
         self.status = self.status & 0b1011_1111;
     }   
@@ -48,6 +52,10 @@ impl CPU {
     fn set_negative_flag(&mut self) {
         self.status = self.status | 0b1000_0000;
     }    
+
+    fn remove_decimal_flag(&mut self) {
+        self.status = self.status & 0b1101_1111;
+    }
 
     fn remove_negative_flag(&mut self) {
         self.status = self.status & 0b0111_1111;
@@ -65,6 +73,18 @@ impl CPU {
         return self.status & 0b0000_0010;
     }
 
+    fn get_negative_flag(&self) -> u8 {
+        return self.status & 0b1000_0000;
+    }
+
+    fn get_overflow_flag(&self) -> u8 {
+        return self.status & 0b0100_0000;
+    }
+
+    fn get_break_flag(&self) -> u8 {
+        return self.status & 0b0001_0000;
+    }
+
     fn branch(&mut self) {
         let addr = self.read_mem(self.program_counter) as i8;
         let jump_addr = self.
@@ -72,6 +92,32 @@ impl CPU {
                         .wrapping_add(1)
                         .wrapping_add(addr as u16);
         self.program_counter = jump_addr;
+    }
+
+    pub fn cld_clear_decimal_mode(&mut self) {
+        self.remove_decimal_flag();
+    }
+
+    pub fn cli_clear_interrupt_disable(&mut self) {
+        self.remove_interrupt_flag();
+    }
+
+    pub fn cli_clear_overflow_disable(&mut self) {
+        self.get_overflow_flag();
+    }
+
+    pub fn cmp_compare(&mut self, value: u8) {
+        if self.accumulator >= value {
+            self.sec_set_carry_flag();
+        } else if self.accumulator == value {
+            self.set_zero_flag();        
+        }
+
+        self.accumulator = self.accumulator - value;
+
+        if self.accumulator > 127 {
+            self.set_negative_flag();
+        }
     }
 
     pub fn adc_add_with_carry(&mut self, value: u8) {
@@ -172,8 +218,51 @@ impl CPU {
         }
     }
 
-    pub fn bit_test(&mut self) {
-        todo!()
+    pub fn bit_test(&mut self, value: u8) {
+        if self.accumulator & value == 0 {
+            self.set_zero_flag();
+        } else {
+            self.remove_zero_flag();
+        }
+
+        if value & 0b0100_0000 != 0{
+            self.set_overflow_flag();
+        }
+
+        if value & 0b1000_0000 != 0{
+            self.set_negative_flag();
+        }
+        
+    }
+
+    pub fn bmi_branch_if_minus(&mut self) {
+        if self.get_negative_flag() != 0 {
+            self.branch();
+        }
+    }
+
+    pub fn bne_branch_if_not_equal(&mut self) {
+        if self.get_zero_flag() == 0 {
+            self.branch();
+        }
+    }
+
+    pub fn bpl_branch_if_positive(&mut self) {
+        if self.get_negative_flag() == 0 {
+            self.branch();
+        }
+    }
+
+    pub fn bvc_branch_if_overflow_clear(&mut self) {
+        if self.get_overflow_flag() == 0 {
+            self.branch();
+        }
+    }
+
+    pub fn bvc_branch_if_overflow_set(&mut self) {
+        if self.get_overflow_flag() != 0 {
+            self.branch();
+        }
     }
 
     pub fn lda_load_accumulator(&mut self, value: u8) {
