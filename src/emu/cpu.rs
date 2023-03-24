@@ -61,6 +61,19 @@ impl CPU {
         return self.status & 0b0000_0001;
     }
 
+    fn get_zero_flag(&self) -> u8 {
+        return self.status & 0b0000_0010;
+    }
+
+    fn branch(&mut self) {
+        let addr = self.read_mem(self.program_counter) as i8;
+        let jump_addr = self.
+                        program_counter
+                        .wrapping_add(1)
+                        .wrapping_add(addr as u16);
+        self.program_counter = jump_addr;
+    }
+
     pub fn adc_add_with_carry(&mut self, value: u8) {
         let mut sum = value as u16 + self.accumulator as u16;
         if self.status & 0b0000_0001 !=0 {
@@ -142,16 +155,25 @@ impl CPU {
     }
 
     pub fn bcc_branch_if_carry_clear(&mut self) {
-        if self.get_carry_flag() != 0 {
-            return;
+        if self.get_carry_flag() == 0 {
+            self.branch();
         }
+    }
 
-        let addr = self.read_mem(self.program_counter) as i8;
-        let jump_addr = self.
-                        program_counter
-                        .wrapping_add(1)
-                        .wrapping_add(addr as u16);
-        self.program_counter = jump_addr;
+    pub fn bcs_branch_if_carry_set(&mut self) {
+        if self.get_carry_flag() == 1 {
+            self.branch();
+        }
+    }
+
+    pub fn beq_branch_if_equal(&mut self) {
+        if self.get_zero_flag() == 1 {
+            self.branch();
+        }
+    }
+
+    pub fn bit_test(&mut self) {
+        todo!()
     }
 
     pub fn lda_load_accumulator(&mut self, value: u8) {
