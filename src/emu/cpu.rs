@@ -2,8 +2,8 @@ pub struct CPU {
     program_counter: u16,
     stack_pointer: u32,
     accumulator: u8,
-    register_x: u32,
-    register_y: u32,
+    register_x: u8,
+    register_y: u8,
     status: u8,
     memory: [u8; 0xFFFF]
 }
@@ -113,12 +113,90 @@ impl CPU {
             self.set_zero_flag();        
         }
 
-        self.accumulator = self.accumulator - value;
+        self.accumulator = self.accumulator.wrapping_sub(value);
 
         if self.accumulator > 127 {
             self.set_negative_flag();
         }
     }
+
+    pub fn cpx_compare_x_register(&mut self, value: u8) {
+        let result = self.register_x.wrapping_sub(value);
+        
+        if self.register_x >= value {
+            self.sec_set_carry_flag();
+        } 
+
+        if self.register_x == value {
+            self.set_zero_flag();
+        }
+
+        if result  > 127 {
+            self.set_negative_flag();
+        }
+    }
+
+    pub fn cpy_compare_y_register(&mut self, value: u8) {
+        let result = self.register_y.wrapping_sub(value);
+        
+        if self.register_y >= value {
+            self.sec_set_carry_flag();
+        } 
+
+        if self.register_y == value {
+            self.set_zero_flag();
+        }
+
+        if result  > 127 {
+            self.set_negative_flag();
+        } else {
+            self.remove_negative_flag();
+        }
+    }
+
+    pub fn dec_decrement_memory(&mut self, value: u8) -> u8{
+        let result = value.wrapping_sub(1);
+
+        if result == 0 {
+            self.set_zero_flag();
+        }
+
+        if result > 127 {
+            self.set_negative_flag();
+        } else {
+            self.remove_negative_flag();
+        }
+
+        result
+    }
+
+    pub fn dex_decrement_x_register(&mut self){
+       self.register_x = self.register_x.wrapping_sub(1);
+
+        if self.register_x == 0 {
+            self.set_zero_flag();
+        }
+
+        if self.register_x > 127 {
+            self.set_negative_flag();
+        } else {
+            self.remove_negative_flag();
+        }
+    }
+
+    pub fn dey_decrement_y_register(&mut self){
+        self.register_y = self.register_y.wrapping_sub(1);
+ 
+         if self.register_y == 0 {
+             self.set_zero_flag();
+         }
+ 
+         if self.register_y > 127 {
+             self.set_negative_flag();
+         } else {
+             self.remove_negative_flag();
+         }
+     }
 
     pub fn adc_add_with_carry(&mut self, value: u8) {
         let mut sum = value as u16 + self.accumulator as u16;
