@@ -198,6 +198,67 @@ impl CPU {
          }
      }
 
+     pub fn eor_exclusive_or(&mut self, value: u8) {
+        self.accumulator = self.accumulator ^ value;
+
+        if self.accumulator == 0 {
+            self.set_zero_flag();
+        }
+
+        if self.accumulator > 127 {
+            self.set_negative_flag();
+        } else {
+            self.remove_negative_flag();
+        }
+     }
+
+     pub fn inc_increment_memory(&mut self, mut value: u8) -> u8 {
+        value = value + 1;
+
+        if value == 0 {
+            self.set_zero_flag();
+        }
+
+        if value > 127 {
+            self.set_negative_flag();
+        } else {
+            self.remove_negative_flag();
+        }
+
+        return value;
+     }
+
+     pub fn inx_increment_register_x(&mut self) {
+        self.register_x += 1;
+
+        if self.register_x == 0 {
+            self.set_zero_flag();
+        }
+
+        if self.register_x > 127 {
+            self.set_negative_flag();
+        } else {
+            self.remove_negative_flag();
+        }
+
+     }
+
+     pub fn inx_increment_register_y(&mut self) {
+        self.register_y += 1;
+
+        if self.register_y == 0 {
+            self.set_zero_flag();
+        }
+
+        if self.register_y > 127 {
+            self.set_negative_flag();
+        } else {
+            self.remove_negative_flag();
+        }
+
+     }
+
+
     pub fn adc_add_with_carry(&mut self, value: u8) {
         let mut sum = value as u16 + self.accumulator as u16;
         if self.status & 0b0000_0001 !=0 {
